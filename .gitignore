@@ -1,0 +1,7 @@
+# Secrets — never commit
+scripts/quickshell/calendar/.env
+
+# Generated/cache files
+scripts/quickshell/qs_colors.json
+scripts/quickshell/colors.json
+hyprland.conf.save
