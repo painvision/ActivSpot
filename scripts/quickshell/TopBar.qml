@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -14,7 +15,7 @@ Variants {
             id: barWindow
 
             required property var modelData
-            
+
             // Bind this specific bar instance to the dynamically assigned screen
             screen: modelData
             
@@ -730,6 +731,8 @@ Variants {
                                         id: menuAnchor
                                         anchor.window: barWindow
                                         anchor.item: trayIcon
+                                        anchor.edges: Edges.Bottom
+                                        anchor.gravity: Edges.Bottom | Edges.Right
                                         menu: modelData.menu
                                     }
 
