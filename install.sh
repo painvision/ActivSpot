@@ -13,6 +13,8 @@ warn()    { echo -e "${YELLOW}  ⚠${NC}  $*"; }
 die()     { echo -e "${RED}  ✗${NC}  $*" >&2; exit 1; }
 header()  { echo -e "\n${BOLD}${BLUE}══ $* ══${NC}"; }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # ── sanity checks ────────────────────────────────────────────────────────────
 [[ -f /etc/arch-release ]] || die "This script is for Arch Linux only."
 [[ $EUID -ne 0 ]]          || die "Do not run as root — sudo will be called when needed."
@@ -48,14 +50,14 @@ PACMAN_PKGS=(
     kitty chromium nautilus
 
     # Shell utilities
-    rofi inotify-tools ffmpeg
+    inotify-tools ffmpeg socat brightnessctl
 
     # Wallpaper & colour
     matugen
 
     # Media & audio
     playerctl cava pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber
-    easyeffects swayosd swaync
+    easyeffects swaync
 
     # Clipboard
     cliphist wl-clipboard
@@ -65,8 +67,8 @@ PACMAN_PKGS=(
 
     # Fonts
     noto-fonts noto-fonts-emoji
+    ttf-jetbrains-mono
     ttf-roboto ttf-ubuntu-font-family
-    ttf-dejavu ttf-liberation
 
     # GTK theme
     adw-gtk-theme
@@ -95,10 +97,8 @@ header "AUR packages ($AUR)"
 AUR_PKGS=(
     quickshell-git
     awww
-    swayosd
     ttf-martian-mono-nerd
-    woff2-font-awesome
-    aylurs-gtk-shell-git
+    ttf-iosevka-nerd
 )
 
 MISSING_AUR=()
@@ -113,17 +113,27 @@ else
     success "All AUR packages already installed"
 fi
 
+# ── copy dotfiles ─────────────────────────────────────────────────────────────
+header "Dotfiles"
+TARGET="$HOME/.config/hypr"
+if [[ "$SCRIPT_DIR" != "$TARGET" ]]; then
+    info "Copying configs from $SCRIPT_DIR → $TARGET"
+    mkdir -p "$TARGET"
+    cp -r "$SCRIPT_DIR"/. "$TARGET/"
+    success "Copied to $TARGET"
+else
+    success "Already in $TARGET, skipping copy"
+fi
+
+# ── script permissions ────────────────────────────────────────────────────────
+header "Script permissions"
+find "$TARGET/scripts" -name "*.sh" -exec chmod +x {} \; 2>/dev/null && \
+    success "chmod +x on all scripts"
+
 # ── cache directories ─────────────────────────────────────────────────────────
 header "Cache directories"
-CACHE_DIRS=(
-    "$HOME/.cache/qs_recording_state"
-    "$HOME/.cache/quickshell"
-    "$HOME/.cache/matugen"
-)
-for d in "${CACHE_DIRS[@]}"; do
-    mkdir -p "$d"
-    success "Created $d"
-done
+mkdir -p "$HOME/.cache/quickshell" "$HOME/.cache/matugen"
+success "Cache dirs ready"
 
 # ── wallpaper directory ───────────────────────────────────────────────────────
 header "Wallpaper directory"
@@ -138,20 +148,13 @@ fi
 
 # ── systemd / pipewire ────────────────────────────────────────────────────────
 header "Systemd user services"
-SERVICES=(pipewire pipewire-pulse wireplumber)
-for svc in "${SERVICES[@]}"; do
+for svc in pipewire pipewire-pulse wireplumber; do
     if ! systemctl --user is-enabled "$svc" &>/dev/null; then
         systemctl --user enable --now "$svc" && success "Enabled $svc"
     else
         success "$svc already enabled"
     fi
 done
-
-# ── script permissions ────────────────────────────────────────────────────────
-header "Script permissions"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-find "$SCRIPT_DIR/scripts" -name "*.sh" -exec chmod +x {} \; 2>/dev/null && \
-    success "chmod +x on all scripts in $SCRIPT_DIR/scripts"
 
 # ── done ──────────────────────────────────────────────────────────────────────
 echo ""

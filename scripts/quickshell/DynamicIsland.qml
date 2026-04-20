@@ -115,6 +115,16 @@ PanelWindow {
     property int  discordCallSeconds: 0
     property int  _discordCallStart:  0
 
+    // OSD
+    property bool   osdActive: false
+    property string osdType:   ""   // "layout" | "volume" | "brightness"
+    property string osdValue:  ""
+
+    Timer {
+        id: osdTimer; interval: 1500
+        onTriggered: islandWindow.osdActive = false
+    }
+
     // VPN
     property bool   vpnActive:       false
     property string vpnInterface:    ""
@@ -620,6 +630,7 @@ PanelWindow {
         z: 10
 
         property int collapsedW: {
+            if (islandWindow.osdActive)                                                return osdCollapsed.preferredWidth;
             if (islandWindow.currentPage === "recording" && islandWindow.isRecording) return recordingCollapsed.preferredWidth;
             if (islandWindow.currentPage === "discord"   && islandWindow.discordInCall) return discordCollapsed.preferredWidth;
             if (islandWindow.currentPage === "music"     && islandWindow.isMediaActive) return musicCollapsed.preferredWidth;
@@ -704,6 +715,11 @@ PanelWindow {
             border.width: islandWindow.volDragging ? 2 : (islandWindow.isRecording ? 2 : (islandWindow.notifActive ? 2 : (islandWindow.isMediaActive && islandWindow.musicData.status === "Playing" && !islandWindow.expanded ? 2 : 1)))
             Behavior on border.width { NumberAnimation { duration: 300 } }
             border.color: {
+                if (islandWindow.osdActive && !islandWindow.expanded) {
+                    if (islandWindow.osdType === "volume")     return Qt.rgba(islandWindow.blue.r,  islandWindow.blue.g,  islandWindow.blue.b,  0.55)
+                    if (islandWindow.osdType === "brightness") return Qt.rgba(islandWindow.peach.r, islandWindow.peach.g, islandWindow.peach.b, 0.55)
+                    return Qt.rgba(islandWindow.teal.r, islandWindow.teal.g, islandWindow.teal.b, 0.55)
+                }
                 if (islandWindow.volDragging) {
                     let t = islandWindow.currentVol / 100.0;
                     let b = islandWindow.blue, m = islandWindow.mauve;
@@ -863,46 +879,54 @@ PanelWindow {
             Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.InOutCubic } }
             z: 5
 
+            OSDCollapsed {
+                id: osdCollapsed; island: islandWindow; anchors.centerIn: parent
+                opacity: islandWindow.osdActive ? 1.0 : 0.0
+                visible: opacity > 0.001
+                z: 6
+                Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.InOutCubic } }
+            }
+
             ClockCollapsed {
                 id: clockCollapsed; island: islandWindow; anchors.centerIn: parent
-                opacity: (!islandWindow.volDragging && islandWindow.currentPage === "clock") ? 1.0 : 0.0
+                opacity: (!islandWindow.osdActive && !islandWindow.volDragging && islandWindow.currentPage === "clock") ? 1.0 : 0.0
                 visible: opacity > 0.001
                 Behavior on opacity { SequentialAnimation {
-                    PauseAnimation { duration: islandWindow.currentPage === "clock" ? 60 : 0 }
+                    PauseAnimation { duration: islandWindow.currentPage === "clock" && !islandWindow.osdActive ? 60 : 0 }
                     NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
                 }}
             }
             MusicCollapsed {
                 id: musicCollapsed; island: islandWindow; anchors.centerIn: parent
-                opacity: (!islandWindow.volDragging && islandWindow.currentPage === "music" && islandWindow.isMediaActive) ? 1.0 : 0.0
+                opacity: (!islandWindow.osdActive && !islandWindow.volDragging && islandWindow.currentPage === "music" && islandWindow.isMediaActive) ? 1.0 : 0.0
                 visible: opacity > 0.001
                 Behavior on opacity { SequentialAnimation {
-                    PauseAnimation { duration: islandWindow.currentPage === "music" ? 60 : 0 }
+                    PauseAnimation { duration: islandWindow.currentPage === "music" && !islandWindow.osdActive ? 60 : 0 }
                     NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
                 }}
             }
             NotifsCollapsed {
                 id: notifsCollapsed; island: islandWindow; anchors.centerIn: parent
-                opacity: (!islandWindow.volDragging && islandWindow.currentPage === "notifs") ? 1.0 : 0.0
+                opacity: (!islandWindow.osdActive && !islandWindow.volDragging && islandWindow.currentPage === "notifs") ? 1.0 : 0.0
                 visible: opacity > 0.001
                 Behavior on opacity { SequentialAnimation {
-                    PauseAnimation { duration: islandWindow.currentPage === "notifs" ? 60 : 0 }
+                    PauseAnimation { duration: islandWindow.currentPage === "notifs" && !islandWindow.osdActive ? 60 : 0 }
                     NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
                 }}
             }
             RecordingCollapsed {
                 id: recordingCollapsed; island: islandWindow; anchors.centerIn: parent
-                opacity: (!islandWindow.volDragging && islandWindow.currentPage === "recording" && islandWindow.isRecording) ? 1.0 : 0.0
+                opacity: (!islandWindow.osdActive && !islandWindow.volDragging && islandWindow.currentPage === "recording" && islandWindow.isRecording) ? 1.0 : 0.0
                 visible: opacity > 0.001
                 Behavior on opacity { SequentialAnimation {
-                    PauseAnimation { duration: islandWindow.currentPage === "recording" ? 60 : 0 }
+                    PauseAnimation { duration: islandWindow.currentPage === "recording" && !islandWindow.osdActive ? 60 : 0 }
                     NumberAnimation { duration: 200; easing.type: Easing.InOutCubic }
                 }}
             }
 
             DiscordCollapsed {
                 id: discordCollapsed; island: islandWindow; anchors.centerIn: parent
-                opacity: (!islandWindow.volDragging && islandWindow.currentPage === "discord" && islandWindow.discordInCall) ? 1.0 : 0.0
+                opacity: (!islandWindow.osdActive && !islandWindow.volDragging && islandWindow.currentPage === "discord" && islandWindow.discordInCall) ? 1.0 : 0.0
                 visible: opacity > 0.001
                 Behavior on opacity { SequentialAnimation {
                     PauseAnimation { duration: islandWindow.currentPage === "discord" ? 60 : 0 }
@@ -1280,6 +1304,72 @@ PanelWindow {
                 notifIpcWatcher.running = true;
             }
         }
+    }
+
+    // OSD IPC — volume/brightness scripts write "type|value" to /tmp/qs_osd
+    Process {
+        id: osdIpcWatcher; running: true
+        command: ["bash", "-c",
+            "inotifywait -qq -e close_write,moved_to --include 'qs_osd$' /tmp/ 2>/dev/null; " +
+            "[ -f /tmp/qs_osd ] && cat /tmp/qs_osd && rm -f /tmp/qs_osd"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let data = this.text.trim()
+                if (data) {
+                    let parts = data.split("|")
+                    if (parts.length >= 2) {
+                        islandWindow.osdType  = parts[0]
+                        islandWindow.osdValue = parts[1]
+                        islandWindow.osdActive = true
+                        osdTimer.restart()
+                    }
+                }
+                osdIpcWatcher.running = false
+                osdIpcWatcher.running = true
+            }
+        }
+    }
+
+    // Hyprland layout watcher — listens to socket2 activelayout events
+    Process {
+        id: layoutWatcher; running: true
+        command: ["bash", "-c",
+            "sock=\"$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock\"; " +
+            "socat - \"UNIX-CONNECT:$sock\" 2>/dev/null | " +
+            "grep --line-buffered '^activelayout>>' | " +
+            "while IFS= read -r line; do " +
+            "  layout=\"${line##*,}\"; " +
+            "  case \"$layout\" in " +
+            "    *Russian*)     echo 'Russian' ;; " +
+            "    *English*|*US*) echo 'English' ;; " +
+            "    *Ukrainian*)   echo 'Ukrainian' ;; " +
+            "    *German*)      echo 'German' ;; " +
+            "    *French*)      echo 'French' ;; " +
+            "    *Spanish*)     echo 'Spanish' ;; " +
+            "    *Polish*)      echo 'Polish' ;; " +
+            "    *Turkish*)     echo 'Turkish' ;; " +
+            "    *Arabic*)      echo 'Arabic' ;; " +
+            "    *Chinese*)     echo 'Chinese' ;; " +
+            "    *Japanese*)    echo 'Japanese' ;; " +
+            "    *Korean*)      echo 'Korean' ;; " +
+            "    *)             echo \"$layout\" ;; " +
+            "  esac; " +
+            "done"
+        ]
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: (line) => {
+                let code = line.trim()
+                if (code.length >= 1) {
+                    islandWindow.osdType   = "layout"
+                    islandWindow.osdValue  = code
+                    islandWindow.osdActive = true
+                    osdTimer.restart()
+                }
+            }
+        }
+        onExited: { running = true }
     }
 
     // IPC: External expand/collapse toggle (e.g. keybind)
