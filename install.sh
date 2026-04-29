@@ -105,7 +105,7 @@ done
 
 if [[ ${#MISSING_AUR[@]} -gt 0 ]]; then
     info "Installing from AUR: ${MISSING_AUR[*]}"
-    $AUR -S --needed --noconfirm "${MISSING_AUR[@]}"
+    $AUR -S --needed "${MISSING_AUR[@]}"
 else
     success "All AUR packages already installed"
 fi
