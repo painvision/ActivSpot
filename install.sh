@@ -61,10 +61,6 @@ PACMAN_PKGS=(
 
     # Clipboard
     cliphist wl-clipboard
-
-    # Screen recording
-    wl-screenrec
-
     # Fonts
     noto-fonts noto-fonts-emoji
     ttf-jetbrains-mono
@@ -99,6 +95,7 @@ AUR_PKGS=(
     awww
     ttf-martian-mono-nerd
     ttf-iosevka-nerd
+    wl-screenrec
 )
 
 MISSING_AUR=()
